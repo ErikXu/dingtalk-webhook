@@ -10,15 +10,20 @@ import (
 type Config struct {
 	Service  ServiceConfig  `mapstructure:"service"`
 	Dingtalk DingtalkConfig `mapstructure:"dingtalk"`
+	Jira     JiraConfig     `mapstructure:"jira"`
 }
 
 type ServiceConfig struct {
-	Port int
+	Port int `mapstructure:"port"`
 }
 
 type DingtalkConfig struct {
 	Webhook string `mapstructure:"webhook"`
 	Secret  string `mapstructure:"secret"`
+}
+
+type JiraConfig struct {
+	Domain string `mapstructure:"domain"`
 }
 
 var AppConfig Config

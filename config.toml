@@ -4,3 +4,6 @@ port = 8080
 [dingtalk]
 webhook = "https://oapi.dingtalk.com/robot/send?access_token={access_token}"
 secret = "{secret}"
+
+[jira]
+domain = "{domain}"
