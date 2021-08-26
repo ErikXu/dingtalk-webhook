@@ -7,6 +7,7 @@ import (
 func NewRouter() *gin.Engine {
 	router := gin.New()
 
-	router.POST("/test", test)
+	router.POST("/print", print)
+	router.GET("/send", send)
 	return router
 }
