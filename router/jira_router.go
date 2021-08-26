@@ -33,7 +33,7 @@ func jira(c *gin.Context) {
 	if content.WebhookEvent == "jira:issue_created" {
 		title := fmt.Sprintf("%s 新增 %s %s", content.Issue.Fields.Creator.DisplayName, content.Issue.Fields.Issuetype.Name, content.Issue.Key)
 		text := generateCreatedMsg(content, colors, "")
-		util.SendMarkdownMsg(config.AppConfig.Dingtalk.Webhook, config.AppConfig.Dingtalk.Secret, title, text, false, []string{""}, []string{})
+		util.SendMarkdownMsg(config.AppConfig.Dingtalk.Webhook, config.AppConfig.Dingtalk.Secret, title, text, false, []string{}, []string{})
 	}
 
 	c.JSON(http.StatusBadRequest, content)
