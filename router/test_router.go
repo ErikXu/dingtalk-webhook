@@ -21,7 +21,7 @@ func print(c *gin.Context) {
 }
 
 func send(c *gin.Context) {
-	err := util.SendMarkdownMsg(config.AppConfig.Dingtalk.Webhook, config.AppConfig.Dingtalk.Secret, "Test", "Hello World!")
+	err := util.SendMarkdownMsg(config.AppConfig.Dingtalk.Webhook, config.AppConfig.Dingtalk.Secret, "Test", "Hello World!", false, []string{}, []string{})
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, "failed")
 	}

@@ -12,13 +12,24 @@ import (
 	"time"
 )
 
-func SendMarkdownMsg(webhook string, secret string, title string, msg string) error {
+func SendMarkdownMsg(webhook string, secret string, title string, msg string, isAtAll bool, atMobiles []string, atUserIds []string) error {
 	markdownRequest := MarkdownRequest{
 		Markdown: MarkdownRequestContent{
 			Title: title,
 			Text:  msg,
 		},
 		Msgtype: "markdown",
+		At: At{
+			IsAtAll: isAtAll,
+		},
+	}
+
+	if len(atMobiles) > 0 {
+		markdownRequest.At.AtMobiles = atMobiles
+	}
+
+	if len(atUserIds) > 0 {
+		markdownRequest.At.AtUserIds = atUserIds
 	}
 
 	jsonContent, err := json.Marshal(markdownRequest)
@@ -60,9 +71,16 @@ func SendMarkdownMsg(webhook string, secret string, title string, msg string) er
 type MarkdownRequest struct {
 	Markdown MarkdownRequestContent `json:"markdown"`
 	Msgtype  string                 `json:"msgtype"`
+	At       At                     `json:"at"`
 }
 
 type MarkdownRequestContent struct {
 	Title string `json:"title"`
 	Text  string `json:"text"`
+}
+
+type At struct {
+	AtMobiles []string `json:"atMobiles"`
+	AtUserIds []string `json:"atUserIds"`
+	IsAtAll   bool     `json:"isAtAll"`
 }
