@@ -7,3 +7,10 @@ secret = "{secret}"
 
 [jira]
 domain = "{domain}"
+
+[user]
+users = { 
+    "{userKey1}"="{mobile1}",
+    "{userKey2}"="{mobile2}",
+    "{userKey3}"="{mobile3}"
+}

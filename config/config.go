@@ -11,6 +11,7 @@ type Config struct {
 	Service  ServiceConfig  `mapstructure:"service"`
 	Dingtalk DingtalkConfig `mapstructure:"dingtalk"`
 	Jira     JiraConfig     `mapstructure:"jira"`
+	UserMap  UserConfig     `mapstructure:"user"`
 }
 
 type ServiceConfig struct {
@@ -24,6 +25,10 @@ type DingtalkConfig struct {
 
 type JiraConfig struct {
 	Domain string `mapstructure:"domain"`
+}
+
+type UserConfig struct {
+	Users map[string]string `mapstructure:"users"`
 }
 
 var AppConfig Config

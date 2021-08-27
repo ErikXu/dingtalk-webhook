@@ -17,12 +17,73 @@ func jira(c *gin.Context) {
 		return
 	}
 
-	if content.WebhookEvent == "jira:issue_updated" && content.Issue.Fields.Status.Name != "待验证" {
-		c.JSON(http.StatusBadRequest, content)
-		return
+	if content.WebhookEvent == "jira:issue_created" {
+		handleIssueCreated(content)
 	}
 
-	colors := map[string]string{
+	if content.WebhookEvent == "jira:issue_updated" && content.IssueEventTypeName == "issue_generic" && content.Issue.Fields.Status.Name == "待验证" {
+		handleIssueUpdated(content)
+	}
+
+	if content.WebhookEvent == "jira:issue_updated" && content.IssueEventTypeName == "issue_generic" && content.Issue.Fields.Status.Name == "关闭" {
+		handleIssueClosed(content)
+	}
+
+	c.JSON(http.StatusBadRequest, content)
+}
+
+func handleIssueCreated(content JiraCallback) {
+	msgType := "新增"
+	mobile := getMobile(content.Issue.Fields.Assignee.Key)
+	if len(mobile) > 0 {
+		content.Issue.Fields.Assignee.DisplayName = fmt.Sprintf("%s @%s", content.Issue.Fields.Assignee.DisplayName, mobile)
+	}
+
+	title := generateTitle(msgType, content)
+	text := generateMsg(msgType, content)
+	util.SendMarkdownMsg(config.AppConfig.Dingtalk.Webhook, config.AppConfig.Dingtalk.Secret, title, text, false, []string{mobile}, []string{})
+}
+
+func handleIssueUpdated(content JiraCallback) {
+	msgType := "修改"
+	mobile := getMobile(content.Issue.Fields.Creator.Key)
+	if len(mobile) > 0 {
+		content.Issue.Fields.Creator.DisplayName = fmt.Sprintf("%s @%s", content.Issue.Fields.Creator.DisplayName, mobile)
+	}
+
+	title := generateTitle(msgType, content)
+	text := generateMsg(msgType, content)
+	util.SendMarkdownMsg(config.AppConfig.Dingtalk.Webhook, config.AppConfig.Dingtalk.Secret, title, text, false, []string{mobile}, []string{})
+}
+
+func handleIssueClosed(content JiraCallback) {
+	msgType := "关闭"
+	mobile := getMobile(content.Issue.Fields.Creator.Key)
+	if len(mobile) > 0 {
+		content.Issue.Fields.Creator.DisplayName = fmt.Sprintf("%s @%s", content.Issue.Fields.Creator.DisplayName, mobile)
+	}
+
+	title := generateTitle(msgType, content)
+	text := generateMsg(msgType, content)
+	util.SendMarkdownMsg(config.AppConfig.Dingtalk.Webhook, config.AppConfig.Dingtalk.Secret, title, text, false, []string{mobile}, []string{})
+}
+
+func getMobile(userName string) string {
+	if val, ok := config.AppConfig.UserMap.Users[userName]; ok {
+		return val
+	}
+
+	return ""
+}
+
+func generateTitle(msgType string, content JiraCallback) string {
+	title := fmt.Sprintf("%s %s %s %s", content.User.DisplayName, msgType, content.Issue.Fields.Issuetype.Name, content.Issue.Key)
+	return title
+}
+
+func generateMsg(msgType string, content JiraCallback) string {
+
+	priorityColors := map[string]string{
 		"致命": "#CE0000",
 		"严重": "#EA4444",
 		"一般": "#EA7D24",
@@ -30,32 +91,27 @@ func jira(c *gin.Context) {
 		"建议": "#55A557",
 	}
 
-	if content.WebhookEvent == "jira:issue_created" {
-		title := fmt.Sprintf("%s 新增 %s %s", content.Issue.Fields.Creator.DisplayName, content.Issue.Fields.Issuetype.Name, content.Issue.Key)
-		text := generateCreatedMsg(content, colors, "")
-		util.SendMarkdownMsg(config.AppConfig.Dingtalk.Webhook, config.AppConfig.Dingtalk.Secret, title, text, false, []string{}, []string{})
+	if val, ok := priorityColors[content.Issue.Fields.Priority.Name]; ok {
+		content.Issue.Fields.Priority.Name = fmt.Sprintf("<font color='%s'>%s</font>", val, content.Issue.Fields.Priority.Name)
 	}
 
-	c.JSON(http.StatusBadRequest, content)
-}
-
-func generateCreatedMsg(content JiraCallback, colors map[string]string, mobile string) string {
-
-	priorityText := content.Issue.Fields.Priority.Name
-	if val, ok := colors[content.Issue.Fields.Priority.Name]; ok {
-		priorityText = fmt.Sprintf("<font color='%s'>%s</font>", val, content.Issue.Fields.Priority.Name)
+	statusColors := map[string]string{
+		"新建":  "#F56C6C",
+		"待验证": "#409EFF",
+		"关闭":  "#67C23A",
 	}
 
-	assigneeText := content.Issue.Fields.Assignee.DisplayName
-	if len(mobile) > 0 {
-		assigneeText = fmt.Sprintf("%s @%s", content.Issue.Fields.Assignee.DisplayName, mobile)
+	if val, ok := statusColors[content.Issue.Fields.Status.Name]; ok {
+		content.Issue.Fields.Status.Name = fmt.Sprintf("<font color='%s'>%s</font>", val, content.Issue.Fields.Status.Name)
 	}
 
-	text := fmt.Sprintf("### 新增 %s [%s](%s/browse/%s) \n", content.Issue.Fields.Issuetype.Name, content.Issue.Key, config.AppConfig.Jira.Domain, content.Issue.Key) +
+	text := fmt.Sprintf("### %s %s [%s](%s/browse/%s) \n", msgType, content.Issue.Fields.Issuetype.Name, content.Issue.Key, config.AppConfig.Jira.Domain, content.Issue.Key) +
 		"--- \n" +
-		fmt.Sprintf("- 优先级：<font color='#52C41A'>%s</font> \n", priorityText) +
+		fmt.Sprintf("- 操作人：%s \n", content.User.DisplayName) +
+		fmt.Sprintf("- 优先级：%s \n", content.Issue.Fields.Priority.Name) +
+		fmt.Sprintf("- 状态：%s \n", content.Issue.Fields.Status.Name) +
 		fmt.Sprintf("- 创建人：%s \n", content.Issue.Fields.Creator.DisplayName) +
-		fmt.Sprintf("- 指派人：%s \n", assigneeText) +
+		fmt.Sprintf("- 指派人：%s \n", content.Issue.Fields.Assignee.DisplayName) +
 		fmt.Sprintf("- 创建时间：%s \n ", time.Unix(content.Timestamp/1000, 0).In(time.FixedZone("CST", 8*3600)).Format("2006-01-02 15:04:05")) +
 		fmt.Sprintf("> [%s](%s/browse/%s)", content.Issue.Fields.Summary, config.AppConfig.Jira.Domain, content.Issue.Key)
 
