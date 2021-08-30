@@ -39,8 +39,8 @@ func handleIssueCreated(content JiraCallback) {
 		content.Issue.Fields.Assignee.DisplayName = fmt.Sprintf("%s @%s", content.Issue.Fields.Assignee.DisplayName, mobile)
 	}
 
-	title := generateTitle(msgType, content)
-	text := generateMsg(msgType, content)
+	title := generateJiraTitle(msgType, content)
+	text := generateJiraMsg(msgType, content)
 	util.SendMarkdownMsg(config.AppConfig.Dingtalk.Webhook, config.AppConfig.Dingtalk.Secret, title, text, false, []string{mobile}, []string{})
 }
 
@@ -51,8 +51,8 @@ func handleIssueUpdated(content JiraCallback) {
 		content.Issue.Fields.Creator.DisplayName = fmt.Sprintf("%s @%s", content.Issue.Fields.Creator.DisplayName, mobile)
 	}
 
-	title := generateTitle(msgType, content)
-	text := generateMsg(msgType, content)
+	title := generateJiraTitle(msgType, content)
+	text := generateJiraMsg(msgType, content)
 	util.SendMarkdownMsg(config.AppConfig.Dingtalk.Webhook, config.AppConfig.Dingtalk.Secret, title, text, false, []string{mobile}, []string{})
 }
 
@@ -63,8 +63,8 @@ func handleIssueClosed(content JiraCallback) {
 		content.Issue.Fields.Creator.DisplayName = fmt.Sprintf("%s @%s", content.Issue.Fields.Creator.DisplayName, mobile)
 	}
 
-	title := generateTitle(msgType, content)
-	text := generateMsg(msgType, content)
+	title := generateJiraTitle(msgType, content)
+	text := generateJiraMsg(msgType, content)
 	util.SendMarkdownMsg(config.AppConfig.Dingtalk.Webhook, config.AppConfig.Dingtalk.Secret, title, text, false, []string{mobile}, []string{})
 }
 
@@ -76,13 +76,12 @@ func getMobile(userName string) string {
 	return ""
 }
 
-func generateTitle(msgType string, content JiraCallback) string {
+func generateJiraTitle(msgType string, content JiraCallback) string {
 	title := fmt.Sprintf("%s %s %s %s", content.User.DisplayName, msgType, content.Issue.Fields.Issuetype.Name, content.Issue.Key)
 	return title
 }
 
-func generateMsg(msgType string, content JiraCallback) string {
-
+func generateJiraMsg(msgType string, content JiraCallback) string {
 	priorityColors := map[string]string{
 		"致命": "#CE0000",
 		"严重": "#EA4444",

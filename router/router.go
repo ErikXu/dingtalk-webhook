@@ -10,5 +10,6 @@ func NewRouter() *gin.Engine {
 	router.POST("/print", print)
 	router.GET("/send", send)
 	router.POST("/jira", jira)
+	router.POST("/gitlab", gitlab)
 	return router
 }
